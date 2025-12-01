@@ -1,4 +1,4 @@
-export type sum = (a: number, b: number) => number;
+export type Sum = (a: number, b: number) => number;
 
 export type TFormControl =
   | HTMLInputElement
@@ -13,8 +13,6 @@ export type TGetFormFromControl = (
   control: TFormControl
 ) => TFormElement | null;
 
-export type TGetValidityFromControl = (control: TFormControl) => TFormValidity;
-
 export interface IFormFieldValidationResult {
   control: TFormControl;
   form: TFormElement | null;
@@ -22,16 +20,22 @@ export interface IFormFieldValidationResult {
   isValid: boolean;
 }
 
+export type TGetValidityFromControl = (
+  control: TFormControl
+) => TFormValidity;
+
 export interface IFormController {
   form: TFormElement;
-  mode: "onSubmit" | "onChange" | "onBlur";
+  mode: TValidationMode;
   getFieldValidationResult(control: TFormControl): IFormFieldValidationResult;
 }
 
+export type TValidationMode = "OnSubmit" | "OnChange" | "OnBlur";
+
 export type TFieldType =
-  | "text"
-  | "email"
-  | "password"
-  | "checkbox"
-  | "radio"
-  | "select";
+  | "Text"
+  | "Email"
+  | "Password"
+  | "Checkbox"
+  | "Radio"
+  | "Select";
