@@ -1,4 +1,4 @@
-import {
+import type {
   TFormControl,
   TFormElement,
   TFormValidity,
@@ -7,6 +7,8 @@ import {
   IFormFieldValidationResult,
   IFormController,
   TValidationMode,
+  IFormStructureCheckResult,
+  IFormStructureIssue,
 } from "./types/types";
 
 export const getFormFromControl: TGetFormFromControl = (
@@ -25,6 +27,45 @@ export const createFormController = (
   form: TFormElement,
   mode: TValidationMode = "OnSubmit"
 ): IFormController => {
+  const getControls = (): NodeListOf<TFormControl> =>
+    form.querySelectorAll("input, select, textarea");
+
+  const findLabelForControl = (
+    control: TFormControl
+  ): HTMLLabelElement | null => {
+    const id = control.id;
+
+    if (id) {
+      const byFor = form.querySelector<HTMLLabelElement>(`label[for="${id}"]`);
+      if (byFor) return byFor;
+    }
+
+    return control.closest("label");
+  };
+
+  const findErrorElementForControl = (
+    control: TFormControl
+  ): HTMLElement | null => {
+    const candidate = control.parentElement?.nextElementSibling;
+
+    if (
+      candidate instanceof HTMLElement &&
+      (candidate.getAttribute("role") === "alert" ||
+        candidate.dataset.errorFor === control.name)
+    ) {
+      return candidate;
+    }
+
+    if (control.name) {
+      const byDataAttr = form.querySelector<HTMLElement>(
+        `[data-error-for="${control.name}"]`
+      );
+      if (byDataAttr) return byDataAttr;
+    }
+
+    return null;
+  };
+
   const getFieldValidationResult = (
     control: TFormControl
   ): IFormFieldValidationResult => {
@@ -41,10 +82,55 @@ export const createFormController = (
     };
   };
 
+  const checkStructure = (): IFormStructureCheckResult => {
+    const controls = getControls();
+    const issues: IFormStructureIssue[] = [];
+
+    if (controls.length === 0) {
+      issues.push({
+        control: null,
+        name: null,
+        type: "NoFields",
+        message: "Форма не содержит полей ввода (input/select/textarea).",
+      });
+    }
+
+    controls.forEach((control) => {
+      const name = control.name || control.id || null;
+
+      const label = findLabelForControl(control);
+      if (!label) {
+        issues.push({
+          control,
+          name,
+          type: "MissingLabel",
+          message: "Для поля не найден связанный <label>.",
+        });
+      }
+
+      const errorElement = findErrorElementForControl(control);
+      if (!errorElement) {
+        issues.push({
+          control,
+          name,
+          type: "MissingErrorContainer",
+          message:
+            'Для поля не найден элемент для вывода ошибок (role="alert" или [data-error-for]).',
+        });
+      }
+    });
+
+    return {
+      isOk: issues.length === 0,
+      issues,
+    };
+  };
+
   return {
     form,
     mode,
     getFieldValidationResult,
+    checkStructure,
   };
 };
 
@@ -53,6 +139,13 @@ export const n = {
     formElement: TFormElement,
     mode: TValidationMode = "OnSubmit"
   ): IFormController {
-    return createFormController(formElement, mode);
+    const controller = createFormController(formElement, mode);
+    const structure = controller.checkStructure();
+
+    if (!structure.isOk) {
+      console.warn("[nova-validate] Нарушения структуры формы:", structure);
+    }
+
+    return controller;
   },
 } as const;
