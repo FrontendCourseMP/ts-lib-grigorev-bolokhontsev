@@ -9,6 +9,7 @@ import type {
   TValidationMode,
   IFormStructureCheckResult,
   IFormStructureIssue,
+  IFieldBuilder,
 } from "./types/types";
 
 export const getFormFromControl: TGetFormFromControl = (
@@ -151,12 +152,28 @@ export const createFormController = (
     };
   };
 
+  const field = (name: string): IFieldBuilder => {
+    const builder: IFieldBuilder = {
+      required(message: string) {
+        console.log(`Поле "${name}": сообщение для обязательного поля установлено в "${message}"`);
+        return builder;
+      },
+      min(message: string) {
+        console.log(`Поле "${name}": сообщение для минимального значения установлено в "${message}"`);
+        return builder;
+      }
+    };
+
+    return builder;
+  };
+
   return {
     form,
     mode,
     getFieldValidationResult,
     checkStructure,
     validate,
+    field,
   };
 };
 
