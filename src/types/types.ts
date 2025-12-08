@@ -20,6 +20,8 @@ export interface IFormFieldValidationResult {
   form: TFormElement | null;
   validity: TFormValidity;
   isValid: boolean;
+  name: string | null;
+  message: string;
 }
 
 export type TValidationMode = "OnSubmit" | "OnChange" | "OnBlur";
@@ -41,10 +43,33 @@ export interface IFormStructureCheckResult {
   issues: IFormStructureIssue[];
 }
 
+export type TFieldKind = "string" | "password" | "number" | "array";
+
+export interface IFieldMessages {
+  min?: string;
+  required?: string;
+}
+
+export interface IFieldBuilder {
+  string(): IFieldBuilder;
+  password(): IFieldBuilder;
+  number(): IFieldBuilder;
+  array(): IFieldBuilder;
+  min(message: string): IFieldBuilder;
+  required(message: string): IFieldBuilder;
+}
+
+export interface IFormValidationResult {
+  isValid: boolean;
+  fields: IFormFieldValidationResult[];
+}
+
 export interface IFormController {
   form: TFormElement;
   mode: TValidationMode;
   getFieldValidationResult(control: TFormControl): IFormFieldValidationResult;
+  field(name: string): IFieldBuilder;
+  validate(): IFormValidationResult;
   checkStructure(): IFormStructureCheckResult;
 }
 

@@ -70,15 +70,24 @@ export const createFormController = (
     control: TFormControl
   ): IFormFieldValidationResult => {
     const fieldForm = getFormFromControl(control);
-    const validity = getValidityFromControl(control);
-
     const isValid = control.checkValidity();
+    const validity = getValidityFromControl(control);
+    const message = control.validationMessage;
+    const errorElement = findErrorElementForControl(control);
+
+    if (errorElement) {
+      errorElement.textContent = isValid ? "" : message;
+    }
+
+    control.toggleAttribute("aria-invalid", !isValid);
 
     return {
       control,
       form: fieldForm,
       validity,
       isValid,
+      name: control.name || control.id || null,
+      message,
     };
   };
 
@@ -126,15 +135,32 @@ export const createFormController = (
     };
   };
 
+  const validate = () => {
+    const results: IFormFieldValidationResult[] = [];
+
+    getControls().forEach((control) => {
+      const result = getFieldValidationResult(control);
+      results.push(result);
+    });
+
+    const isValid = results.every((item) => item.isValid);
+
+    return {
+      isValid,
+      fields: results,
+    };
+  };
+
   return {
     form,
     mode,
     getFieldValidationResult,
     checkStructure,
+    validate,
   };
 };
 
-export const n = {
+export const ValidationGrigorevBolokhontsev = {
   form(
     formElement: TFormElement,
     mode: TValidationMode = "OnSubmit"
@@ -149,3 +175,5 @@ export const n = {
     return controller;
   },
 } as const;
+
+export const v = ValidationGrigorevBolokhontsev;
