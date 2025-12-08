@@ -1,24 +1,22 @@
-import { n } from "./form";
+import { v } from "./form";
 
 const form = document.querySelector("form");
 
 if (form instanceof HTMLFormElement) {
-  const validator = n.form(form);
+  const validator = v.form(form);
+
+  validator
+    .field("age")
+    .number()
+    .required("Укажите возраст")
+    .min("Возраст должен быть от 18 лет");
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    const firstControl = form.querySelector("input, select, textarea");
-
-    if (
-      firstControl instanceof HTMLInputElement ||
-      firstControl instanceof HTMLSelectElement ||
-      firstControl instanceof HTMLTextAreaElement
-    ) {
-      const result = validator.getFieldValidationResult(firstControl);
-      console.log("Результат базовой проверки поля:", result);
-    }
+    const result = validator.validate();
+    console.log("Результат проверки формы:", result);
   });
 }
 
-export { n };
+export { v };

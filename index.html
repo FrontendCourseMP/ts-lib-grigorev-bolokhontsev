@@ -9,8 +9,11 @@
     <main>
       <section>
         <form novalidate>
-          <label>Имя <input type="text" required></label>
-          <p role="alert" aria-live="assertive"></p>
+          <div>
+            <label>Возраст <input type="number" name="age" required></label>
+            <p role="alert" aria-live="assertive" data-error-for="age"></p>
+          </div>
+          
           <button type="submit">Отправить</button>
         </form>
       </section>

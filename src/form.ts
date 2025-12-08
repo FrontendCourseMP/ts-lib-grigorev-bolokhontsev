@@ -10,6 +10,8 @@ import type {
   IFormStructureCheckResult,
   IFormStructureIssue,
   IFieldBuilder,
+  IFormValidationResult,
+  TFieldConfig,
 } from "./types/types";
 
 export const getFormFromControl: TGetFormFromControl = (
@@ -70,6 +72,9 @@ export const createFormController = (
   const getFieldValidationResult = (
     control: TFormControl
   ): IFormFieldValidationResult => {
+    const config = control.name ? fieldConfigs.get(control.name) : undefined;
+    control.setCustomValidity("");
+
     const fieldForm = getFormFromControl(control);
     const isValid = control.checkValidity();
     const validity = getValidityFromControl(control);
@@ -136,7 +141,9 @@ export const createFormController = (
     };
   };
 
-  const validate = () => {
+  const fieldConfigs = new Map<string, TFieldConfig>();
+
+  const validate = (): IFormValidationResult => {
     const results: IFormFieldValidationResult[] = [];
 
     getControls().forEach((control) => {
@@ -144,21 +151,46 @@ export const createFormController = (
       results.push(result);
     });
 
-    const isValid = results.every((item) => item.isValid);
-
     return {
-      isValid,
+      isValid: results.every((item) => item.isValid),
       fields: results,
     };
   };
 
   const field = (name: string): IFieldBuilder => {
+    let config = fieldConfigs.get(name);
+    if (!config) {
+      config = {
+        name,
+        messages: {},
+      };
+      fieldConfigs.set(name, config);
+    }
+
     const builder: IFieldBuilder = {
+      string() {
+        console.log(`Поле "${name}": тип установлен как string`);
+        return builder;
+      },
+      password() {
+        console.log(`Поле "${name}": тип установлен как password`);
+        return builder;
+      },
+      number() {
+        console.log(`Поле "${name}": тип установлен как number`);
+        return builder;
+      },
+      array() {
+        console.log(`Поле "${name}": тип установлен как array`);
+        return builder;
+      },
       required(message: string) {
+        config!.messages.required = message;
         console.log(`Поле "${name}": сообщение для обязательного поля установлено в "${message}"`);
         return builder;
       },
       min(message: string) {
+        config!.messages.min = message;
         console.log(`Поле "${name}": сообщение для минимального значения установлено в "${message}"`);
         return builder;
       }
