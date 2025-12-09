@@ -10,9 +10,17 @@ import type {
   IFormStructureCheckResult,
   IFormStructureIssue,
   IFieldBuilder,
+  IFieldMessages,
   IFormValidationResult,
-  TFieldConfig,
+  TFieldKind,
 } from "./types/types";
+
+type TFieldConfig = {
+  name: string;
+  controls: TFormControl[];
+  kind: TFieldKind;
+  messages: IFieldMessages;
+};
 
 export const getFormFromControl: TGetFormFromControl = (
   control: TFormControl
@@ -73,7 +81,11 @@ export const createFormController = (
     control: TFormControl
   ): IFormFieldValidationResult => {
     const config = control.name ? fieldConfigs.get(control.name) : undefined;
-    control.setCustomValidity("");
+    if (config) {
+      applyCustomMessages(config);
+    } else {
+      control.setCustomValidity("");
+    }
 
     const fieldForm = getFormFromControl(control);
     const isValid = control.checkValidity();
@@ -143,6 +155,127 @@ export const createFormController = (
 
   const fieldConfigs = new Map<string, TFieldConfig>();
 
+  const pickControlsByName = (name: string): TFormControl[] =>
+    Array.from(form.querySelectorAll<TFormControl>(`[name="${name}"]`));
+
+  const ensureFieldConfig = (name: string): TFieldConfig => {
+    const existing = fieldConfigs.get(name);
+    if (existing) return existing;
+
+    const controls = pickControlsByName(name);
+
+    if (controls.length === 0) {
+      throw new Error(
+        `[ValidationGrigorevBolokhontsev] Поле с именем "${name}" не найдено в форме.`
+      );
+    }
+
+    const fresh: TFieldConfig = {
+      name,
+      controls,
+      kind: "string",
+      messages: {},
+    };
+
+    fieldConfigs.set(name, fresh);
+    return fresh;
+  };
+
+  const applyCustomMessages = (config: TFieldConfig): void => {
+    const { kind, controls, messages } = config;
+
+    if (kind === "array") {
+      const checkboxes = controls.filter(
+        (ctrl): ctrl is HTMLInputElement =>
+          ctrl instanceof HTMLInputElement && ctrl.type === "checkbox"
+      );
+
+      checkboxes.forEach((checkbox) => checkbox.setCustomValidity(""));
+
+      if (checkboxes.length === 0) return;
+
+      const minAttr = Number(checkboxes[0].getAttribute("min") ?? 0);
+      const minRequired = Number.isFinite(minAttr) && minAttr > 0 ? minAttr : 0;
+      const checkedCount = checkboxes.filter((box) => box.checked).length;
+
+      if (messages.required && checkedCount === 0) {
+        checkboxes.forEach((box) =>
+          box.setCustomValidity(messages.required as string)
+        );
+        return;
+      }
+
+      if (messages.min && minRequired > 0 && checkedCount < minRequired) {
+        checkboxes.forEach((box) =>
+          box.setCustomValidity(messages.min as string)
+        );
+      }
+
+      return;
+    }
+
+    const control = controls[0];
+
+    if (!control) return;
+
+    control.setCustomValidity("");
+
+    const validity = control.validity;
+
+    if (messages.required && validity.valueMissing) {
+      control.setCustomValidity(messages.required);
+      return;
+    }
+
+    if (messages.min) {
+      const isTooShort = validity.tooShort;
+      const isRangeUnderflow = validity.rangeUnderflow;
+
+      if ((kind === "string" || kind === "password") && isTooShort) {
+        control.setCustomValidity(messages.min);
+      }
+
+      if (kind === "number" && isRangeUnderflow) {
+        control.setCustomValidity(messages.min);
+      }
+    }
+  };
+
+  const buildFieldBuilder = (name: string): IFieldBuilder => {
+    const config = ensureFieldConfig(name);
+
+    const builder: IFieldBuilder = {
+      string() {
+        config.kind = "string";
+        return builder;
+      },
+      password() {
+        config.kind = "password";
+        return builder;
+      },
+      number() {
+        config.kind = "number";
+        return builder;
+      },
+      array() {
+        config.kind = "array";
+        return builder;
+      },
+      min(message: string) {
+        config.messages.min = message;
+        return builder;
+      },
+      required(message: string) {
+        config.messages.required = message;
+        return builder;
+      },
+    };
+
+    return builder;
+  };
+
+  const field = (name: string): IFieldBuilder => buildFieldBuilder(name);
+
   const validate = (): IFormValidationResult => {
     const results: IFormFieldValidationResult[] = [];
 
@@ -157,55 +290,13 @@ export const createFormController = (
     };
   };
 
-  const field = (name: string): IFieldBuilder => {
-    let config = fieldConfigs.get(name);
-    if (!config) {
-      config = {
-        name,
-        messages: {},
-      };
-      fieldConfigs.set(name, config);
-    }
-
-    const builder: IFieldBuilder = {
-      string() {
-        console.log(`Поле "${name}": тип установлен как string`);
-        return builder;
-      },
-      password() {
-        console.log(`Поле "${name}": тип установлен как password`);
-        return builder;
-      },
-      number() {
-        console.log(`Поле "${name}": тип установлен как number`);
-        return builder;
-      },
-      array() {
-        console.log(`Поле "${name}": тип установлен как array`);
-        return builder;
-      },
-      required(message: string) {
-        config!.messages.required = message;
-        console.log(`Поле "${name}": сообщение для обязательного поля установлено в "${message}"`);
-        return builder;
-      },
-      min(message: string) {
-        config!.messages.min = message;
-        console.log(`Поле "${name}": сообщение для минимального значения установлено в "${message}"`);
-        return builder;
-      }
-    };
-
-    return builder;
-  };
-
   return {
     form,
     mode,
     getFieldValidationResult,
-    checkStructure,
-    validate,
     field,
+    validate,
+    checkStructure,
   };
 };
 

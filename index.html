@@ -9,11 +9,30 @@
     <main>
       <section>
         <form novalidate>
-          <div>
-            <label>Возраст <input type="number" name="age" required></label>
-            <p role="alert" aria-live="assertive" data-error-for="age"></p>
-          </div>
-          
+          <label>
+            Имя
+            <input type="text" name="name" required minlength="2" />
+          </label>
+          <p role="alert" aria-live="assertive"></p>
+
+          <label>
+            Возраст
+            <input type="number" name="age" required min="1" />
+          </label>
+          <p role="alert" aria-live="assertive"></p>
+
+          <label>
+            Пароль
+            <input
+              type="password"
+              name="password"
+              required
+              minlength="6"
+              autocomplete="new-password"
+            />
+          </label>
+          <p role="alert" aria-live="assertive"></p>
+
           <button type="submit">Отправить</button>
         </form>
       </section>

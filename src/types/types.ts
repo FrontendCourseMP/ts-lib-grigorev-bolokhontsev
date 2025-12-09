@@ -80,9 +80,3 @@ export type TFieldType =
   | "Checkbox"
   | "Radio"
   | "Select";
-
-
-export type TFieldConfig = {
-  name: string;
-  messages: IFieldMessages;
-};
