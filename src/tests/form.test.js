@@ -86,8 +86,6 @@ test("checkStructure обнаруживает поле без label", () => {
   input.id = "username";
   form.appendChild(input);
   
-  // Нет label для этого поля!
-  
   const errorDiv = document.createElement("div");
   errorDiv.setAttribute("data-error-for", "username");
   form.appendChild(errorDiv);
@@ -100,4 +98,30 @@ test("checkStructure обнаруживает поле без label", () => {
   expect(result.isOk).toBe(false);
   expect(result.issues).toHaveLength(1);
   expect(result.issues[0].type).toBe("MissingLabel");
+});
+
+test("checkStructure обнаруживает поле без контейнера ошибок", () => {
+  // Arrange
+  const form = document.createElement("form");
+  document.body.appendChild(form);
+  
+  const label = document.createElement("label");
+  label.setAttribute("for", "email");
+  label.textContent = "Email";
+  form.appendChild(label);
+  
+  const input = document.createElement("input");
+  input.type = "email";
+  input.name = "email";
+  input.id = "email";
+  form.appendChild(input);
+  
+  // Act
+  const controller = v.form(form);
+  const result = controller.checkStructure();
+
+  // Assert
+  expect(result.isOk).toBe(false);
+  expect(result.issues).toHaveLength(1);
+  expect(result.issues[0].type).toBe("MissingErrorContainer");
 });
