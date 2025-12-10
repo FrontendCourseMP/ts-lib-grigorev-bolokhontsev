@@ -51,3 +51,23 @@ test("checkStructure проверяет структуру формы: happy pat
   expect(validResult.isOk).toBe(true);
   expect(validResult.issues).toHaveLength(0);
 });
+
+test("checkStructure обнаруживает форму без полей ввода", () => {
+  // Arrange - создаем форму без полей (input/select/textarea)
+  const emptyForm = document.createElement("form");
+  document.body.appendChild(emptyForm);
+
+  const paragraph = document.createElement("p");
+  paragraph.textContent = "Форма без полей";
+  emptyForm.appendChild(paragraph);
+
+  // Act - проверяем структуру
+  const controller = v.form(emptyForm);
+  const result = controller.checkStructure();
+
+  // Assert - проверяем, что обнаружена проблема
+  expect(result.isOk).toBe(false);
+  expect(result.issues).toHaveLength(1);
+  expect(result.issues[0].type).toBe("NoFields");
+  expect(result.issues[0].message).toContain("не содержит полей");
+});
