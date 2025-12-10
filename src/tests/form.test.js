@@ -6,6 +6,7 @@ beforeEach(() => {
 });
 
 test("checkStructure проверяет структуру формы: happy path и негативные сценарии", () => {
+  // Arrange
   const validForm = document.createElement("form");
   document.body.appendChild(validForm);
 
@@ -45,9 +46,11 @@ test("checkStructure проверяет структуру формы: happy pat
   formWithoutFields.innerHTML = `<p>Форма без полей</p>`;
   document.body.appendChild(formWithoutFields);
 
+  // Act
   const validController = v.form(validForm);
   const validResult = validController.checkStructure();
 
+  // Assert
   expect(validResult.isOk).toBe(true);
   expect(validResult.issues).toHaveLength(0);
 });
@@ -61,13 +64,40 @@ test("checkStructure обнаруживает форму без полей вв�
   paragraph.textContent = "Форма без полей";
   emptyForm.appendChild(paragraph);
 
-  // Act - проверяем структуру
+  // Act 
   const controller = v.form(emptyForm);
   const result = controller.checkStructure();
 
-  // Assert - проверяем, что обнаружена проблема
+  // Assert
   expect(result.isOk).toBe(false);
   expect(result.issues).toHaveLength(1);
   expect(result.issues[0].type).toBe("NoFields");
   expect(result.issues[0].message).toContain("не содержит полей");
+});
+
+test("checkStructure обнаруживает поле без label", () => {
+  // Arrange
+  const form = document.createElement("form");
+  document.body.appendChild(form);
+  
+  const input = document.createElement("input");
+  input.type = "text";
+  input.name = "username";
+  input.id = "username";
+  form.appendChild(input);
+  
+  // Нет label для этого поля!
+  
+  const errorDiv = document.createElement("div");
+  errorDiv.setAttribute("data-error-for", "username");
+  form.appendChild(errorDiv);
+
+  // Act
+  const controller = v.form(form);
+  const result = controller.checkStructure();
+
+  // Assert
+  expect(result.isOk).toBe(false);
+  expect(result.issues).toHaveLength(1);
+  expect(result.issues[0].type).toBe("MissingLabel");
 });
