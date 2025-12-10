@@ -125,3 +125,80 @@ test("checkStructure обнаруживает поле без контейнер
   expect(result.issues).toHaveLength(1);
   expect(result.issues[0].type).toBe("MissingErrorContainer");
 });
+
+
+test("checkStructure обрабатывает поле без id", () => {
+  // Arrange
+  const form = document.createElement("form");
+  document.body.appendChild(form);
+  
+  // Поле без id 
+  const input = document.createElement("input");
+  input.type = "text";
+  input.name = "username";
+  form.appendChild(input);
+  
+  // Act
+  const controller = v.form(form);
+  const result = controller.checkStructure();
+  
+  // Assert
+  expect(result.isOk).toBe(false);
+});
+
+test("checkStructure обнаруживает несколько ошибок в одной форме", () => {
+  // Arrange
+  const form = document.createElement("form");
+  document.body.appendChild(form);
+  
+  // 1: без label
+  const input1 = document.createElement("input");
+  input1.type = "text";
+  input1.id = "field1";
+  input1.name = "field1";
+  form.appendChild(input1);
+  
+  const error1 = document.createElement("div");
+  error1.setAttribute("data-error-for", "field1");
+  form.appendChild(error1);
+  
+  // 2: без контейнера ошибок
+  const label2 = document.createElement("label");
+  label2.setAttribute("for", "field2");
+  label2.textContent = "Поле 2";
+  form.appendChild(label2);
+  
+  const input2 = document.createElement("input");
+  input2.type = "text";
+  input2.id = "field2";
+  input2.name = "field2";
+  form.appendChild(input2);
+  
+  // 3: валидное
+  const label3 = document.createElement("label");
+  label3.setAttribute("for", "field3");
+  label3.textContent = "Поле 3";
+  form.appendChild(label3);
+  
+  const input3 = document.createElement("input");
+  input3.type = "text";
+  input3.id = "field3";
+  input3.name = "field3";
+  form.appendChild(input3);
+  
+  const error3 = document.createElement("div");
+  error3.setAttribute("data-error-for", "field3");
+  form.appendChild(error3);
+  
+  // Act
+  const controller = v.form(form);
+  const result = controller.checkStructure();
+  
+  // Assert
+  expect(result.isOk).toBe(false);
+  expect(result.issues).toHaveLength(2);
+  
+  const errorTypes = result.issues.map(issue => issue.type);
+  expect(errorTypes).toContain("MissingLabel");
+  expect(errorTypes).toContain("MissingErrorContainer");
+});
