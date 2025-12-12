@@ -64,7 +64,7 @@ test("checkStructure обнаруживает форму без полей вв�
   paragraph.textContent = "Форма без полей";
   emptyForm.appendChild(paragraph);
 
-  // Act 
+  // Act
   const controller = v.form(emptyForm);
   const result = controller.checkStructure();
 
@@ -79,13 +79,13 @@ test("checkStructure обнаруживает поле без label", () => {
   // Arrange
   const form = document.createElement("form");
   document.body.appendChild(form);
-  
+
   const input = document.createElement("input");
   input.type = "text";
   input.name = "username";
   input.id = "username";
   form.appendChild(input);
-  
+
   const errorDiv = document.createElement("div");
   errorDiv.setAttribute("data-error-for", "username");
   form.appendChild(errorDiv);
@@ -104,18 +104,18 @@ test("checkStructure обнаруживает поле без контейнер
   // Arrange
   const form = document.createElement("form");
   document.body.appendChild(form);
-  
+
   const label = document.createElement("label");
   label.setAttribute("for", "email");
   label.textContent = "Email";
   form.appendChild(label);
-  
+
   const input = document.createElement("input");
   input.type = "email";
   input.name = "email";
   input.id = "email";
   form.appendChild(input);
-  
+
   // Act
   const controller = v.form(form);
   const result = controller.checkStructure();
@@ -126,22 +126,21 @@ test("checkStructure обнаруживает поле без контейнер
   expect(result.issues[0].type).toBe("MissingErrorContainer");
 });
 
-
 test("checkStructure обрабатывает поле без id", () => {
   // Arrange
   const form = document.createElement("form");
   document.body.appendChild(form);
-  
-  // Поле без id 
+
+  // Поле без id
   const input = document.createElement("input");
   input.type = "text";
   input.name = "username";
   form.appendChild(input);
-  
+
   // Act
   const controller = v.form(form);
   const result = controller.checkStructure();
-  
+
   // Assert
   expect(result.isOk).toBe(false);
 });
@@ -150,55 +149,135 @@ test("checkStructure обнаруживает несколько ошибок в
   // Arrange
   const form = document.createElement("form");
   document.body.appendChild(form);
-  
+
   // 1: без label
   const input1 = document.createElement("input");
   input1.type = "text";
   input1.id = "field1";
   input1.name = "field1";
   form.appendChild(input1);
-  
+
   const error1 = document.createElement("div");
   error1.setAttribute("data-error-for", "field1");
   form.appendChild(error1);
-  
+
   // 2: без контейнера ошибок
   const label2 = document.createElement("label");
   label2.setAttribute("for", "field2");
   label2.textContent = "Поле 2";
   form.appendChild(label2);
-  
+
   const input2 = document.createElement("input");
   input2.type = "text";
   input2.id = "field2";
   input2.name = "field2";
   form.appendChild(input2);
-  
+
   // 3: валидное
   const label3 = document.createElement("label");
   label3.setAttribute("for", "field3");
   label3.textContent = "Поле 3";
   form.appendChild(label3);
-  
+
   const input3 = document.createElement("input");
   input3.type = "text";
   input3.id = "field3";
   input3.name = "field3";
   form.appendChild(input3);
-  
+
   const error3 = document.createElement("div");
   error3.setAttribute("data-error-for", "field3");
   form.appendChild(error3);
-  
+
   // Act
   const controller = v.form(form);
   const result = controller.checkStructure();
-  
+
   // Assert
   expect(result.isOk).toBe(false);
   expect(result.issues).toHaveLength(2);
-  
-  const errorTypes = result.issues.map(issue => issue.type);
+
+  const errorTypes = result.issues.map((issue) => issue.type);
   expect(errorTypes).toContain("MissingLabel");
   expect(errorTypes).toContain("MissingErrorContainer");
+});
+
+test("checkStructure находит label через closest (обернутый input)", () => {
+  const form = document.createElement("form");
+  document.body.appendChild(form);
+
+  const label = document.createElement("label");
+  label.textContent = "Имя пользователя";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.name = "username";
+  label.appendChild(input);
+  form.appendChild(label);
+
+  const errorDiv = document.createElement("div");
+  errorDiv.setAttribute("data-error-for", "username");
+  form.appendChild(errorDiv);
+
+  const controller = v.form(form);
+  const result = controller.checkStructure();
+
+  expect(result.isOk).toBe(true);
+  expect(result.issues).toHaveLength(0);
+});
+
+test("checkStructure находит error container через nextElementSibling с role alert", () => {
+  const form = document.createElement("form");
+  document.body.appendChild(form);
+
+  const label = document.createElement("label");
+  label.setAttribute("for", "password");
+  label.textContent = "Пароль";
+  form.appendChild(label);
+
+  const inputWrapper = document.createElement("div");
+  const input = document.createElement("input");
+  input.type = "password";
+  input.name = "password";
+  input.id = "password";
+  inputWrapper.appendChild(input);
+  form.appendChild(inputWrapper);
+
+  const errorDiv = document.createElement("div");
+  errorDiv.setAttribute("role", "alert");
+  form.appendChild(errorDiv);
+
+  const controller = v.form(form);
+  const result = controller.checkStructure();
+
+  expect(result.isOk).toBe(true);
+  expect(result.issues).toHaveLength(0);
+});
+
+test("checkStructure находит error container через nextElementSibling с data-error-for", () => {
+  const form = document.createElement("form");
+  document.body.appendChild(form);
+
+  const label = document.createElement("label");
+  label.setAttribute("for", "age");
+  label.textContent = "Возраст";
+  form.appendChild(label);
+
+  const inputWrapper = document.createElement("div");
+  const input = document.createElement("input");
+  input.type = "number";
+  input.name = "age";
+  input.id = "age";
+  inputWrapper.appendChild(input);
+  form.appendChild(inputWrapper);
+
+  const errorDiv = document.createElement("div");
+  errorDiv.setAttribute("data-error-for", "age");
+  form.appendChild(errorDiv);
+
+  const controller = v.form(form);
+  const result = controller.checkStructure();
+
+  expect(result.isOk).toBe(true);
+  expect(result.issues).toHaveLength(0);
 });
