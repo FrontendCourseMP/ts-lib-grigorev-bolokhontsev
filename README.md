@@ -1,4 +1,4 @@
-# Документация по вашему решению
+# Документация по библиотеке валидации
 
 Григорьев Егор - сolavor  
 Болохонцев Виктор - w1lqA
@@ -158,3 +158,148 @@ interface IFormStructureCheckResult {
   issues: IFormStructureIssue[]; // список проблем
 }
 ```
+
+
+**Типы проблем:**
+
+- `"NoFields"` - форма не содержит полей ввода
+- `"MissingLabel"` - для поля не найден связанный label
+- `"MissingErrorContainer"` - для поля не найден контейнер ошибок
+
+**Пример:**
+
+```typescript
+const structure = validator.checkStructure();
+if (!structure.isOk) {
+  structure.issues.forEach((issue) => console.warn(issue.message));
+}
+```
+
+#### `validator.getFieldValidationResult(control)`
+
+Получает результат валидации для конкретного поля.
+
+**Параметры:**
+
+- `control` (TFormControl) - элемент поля (input, select, textarea)
+
+**Возвращает:** `IFormFieldValidationResult`
+
+## Типы
+
+### TValidationMode
+
+```typescript
+type TValidationMode = "OnSubmit" | "OnChange" | "OnBlur";
+```
+
+### TFieldKind
+
+```typescript
+type TFieldKind = "string" | "password" | "number" | "array";
+```
+
+### IFormFieldValidationResult
+
+```typescript
+interface IFormFieldValidationResult {
+  control: TFormControl;
+  form: TFormElement | null;
+  validity: TFormValidity;
+  isValid: boolean;
+  name: string | null;
+  message: string;
+}
+```
+
+## Тестирование
+
+Проект включает набор тестов, покрывающий все основные сценарии:
+
+- Happy path (валидные формы)
+- Негативные сценарии (формы с ошибками)
+- Проверка всех веток if-else
+- Работа с DOM через JsDom
+
+**Запуск тестов:**
+
+```sh
+npm test
+```
+
+## Соответствие требованиям
+
+### Полнота реализации
+
+**Валидация форм:**
+
+- Поддержка различных типов полей (string, password, number, array)
+- Кастомные сообщения об ошибках
+- Проверка обязательности полей
+- Проверка минимальных значений/длин
+
+**Проверка структуры:**
+
+- Валидация наличия полей ввода
+- Проверка связанных label элементов
+- Проверка контейнеров ошибок
+
+**Гибкость:**
+
+- Поддержка различных режимов валидации
+- Fluent API для настройки правил
+- Автоматическое отображение ошибок в DOM
+
+### Понятность API
+
+- **Fluent API** - цепочка методов для интуитивной настройки
+- **Типизация TypeScript** - полная поддержка типов для автодополнения
+- **Понятные названия** - методы и свойства имеют описательные имена
+- **Документация** - все публичные методы документированы
+
+### Примеры использования
+
+Библиотека предоставляет простой и понятный API:
+
+```typescript
+validator.field("name").string().required("Обязательное поле");
+validator
+  .field("password")
+  .password()
+  .required("Пароль обязателен")
+  .min("Минимум 8 символов");
+```
+
+## Разработка
+
+**Установка зависимостей:**
+
+```sh
+npm install
+```
+
+**Запуск в режиме разработки:**
+
+```sh
+npm run dev
+```
+
+**Сборка:**
+
+```sh
+npm run build
+```
+
+**Линтинг:**
+
+```sh
+npm run lint
+```
+
+**Форматирование:**
+
+```sh
+npm run format
+```
+
+
